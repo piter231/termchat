@@ -8,10 +8,10 @@ use ratatui::{
     DefaultTerminal, Frame,
     crossterm::event::{Event, KeyCode},
     layout::{Constraint, Layout},
-    style::{Color, Style, Stylize},
-    symbols::{border, line},
+    style::Stylize,
+    symbols::border,
     text::{Line, Span},
-    widgets::{Block, Gauge, Paragraph, Widget},
+    widgets::{Block, Paragraph, Widget},
 };
 fn main() -> io::Result<()> {
     let mut terminal = ratatui::init();
@@ -36,10 +36,10 @@ impl App {
             if crossterm::event::poll(Duration::from_millis(100)).unwrap() {
                 if let Event::Key(key_event) = ratatui::crossterm::event::read().unwrap() {
                     match key_event.code {
-                        (KeyCode::Tab) => {
+                        KeyCode::Tab => {
                             last_tab_time = Some(Instant::now());
                         }
-                        (KeyCode::Enter) => {
+                        KeyCode::Enter => {
                             let dlu = self.new_message_text.len();
                             if let Some(time) = last_tab_time {
                                 if time.elapsed() < Duration::from_millis(500) {
@@ -51,15 +51,15 @@ impl App {
                                 self.new_message_text[dlu - 1].push('k');
                             }
                         }
-                        (KeyCode::Esc) => {
+                        KeyCode::Esc => {
                             self.exit = true;
                         }
-                        (KeyCode::Backspace) => {
+                        KeyCode::Backspace => {
                             let dlu = self.new_message_text.len();
 
                             self.new_message_text[dlu - 1].pop();
                         }
-                        (KeyCode::Char(c)) => {
+                        KeyCode::Char(c) => {
                             let dlu = self.new_message_text.len();
 
                             self.new_message_text[dlu - 1].push(c);
