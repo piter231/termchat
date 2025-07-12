@@ -199,7 +199,7 @@ impl App {
                                 new_position += new_col;
 
                                 // Add newline positions
-                                new_position += current_line;
+                                new_position += current_line + 1;
 
                                 self.cursor_position = new_position;
                             }
