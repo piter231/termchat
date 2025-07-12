@@ -55,7 +55,7 @@ impl App {
                             let dlu = self.new_message_text.len();
                             if let Some(time) = last_tab_time {
                                 if time.elapsed() < Duration::from_millis(500) {
-                                    if (self.length == self.cursor_position) {
+                                    if self.length == self.cursor_position {
                                         self.cursor_position += 1
                                     }
 
@@ -76,7 +76,7 @@ impl App {
                             let dlu = self.new_message_text.len();
                             let dlu_linii = self.new_message_text[dlu - 1].len();
                             if dlu_linii > 0 {
-                                if (self.length == self.cursor_position) {
+                                if self.length == self.cursor_position {
                                     self.cursor_position -= 1;
                                 }
 
@@ -84,7 +84,7 @@ impl App {
 
                                 self.new_message_text[dlu - 1].pop();
                             } else if dlu > 1 {
-                                if (self.length == self.cursor_position) {
+                                if self.length == self.cursor_position {
                                     self.cursor_position -= 1;
                                 }
 
@@ -95,7 +95,7 @@ impl App {
                         }
                         KeyCode::Char(c) => {
                             let dlu = self.new_message_text.len();
-                            if (self.length == self.cursor_position) {
+                            if self.length == self.cursor_position {
                                 self.cursor_position += 1;
                             }
 
