@@ -23,6 +23,8 @@ fn main() -> io::Result<()> {
     let mut app = App {
         exit: false,
         new_message_text: vec!["".to_string()],
+        length: 0,
+        cursor_position: 0,
     };
     let app_result = app.run(&mut terminal);
     //back into normal mode
@@ -33,6 +35,8 @@ fn main() -> io::Result<()> {
 pub struct App {
     exit: bool,
     new_message_text: Vec<String>,
+    length: u16,
+    cursor_position: u16,
 }
 impl App {
     fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
@@ -51,12 +55,18 @@ impl App {
                             let dlu = self.new_message_text.len();
                             if let Some(time) = last_tab_time {
                                 if time.elapsed() < Duration::from_millis(500) {
+                                    if (self.length == self.cursor_position) {
+                                        self.cursor_position += 1
+                                    }
+
+                                    self.length += 1;
+
                                     self.new_message_text.push("".to_string());
                                 } else {
-                                    self.new_message_text[dlu - 1].push('\n');
+                                    //todo sent
                                 }
                             } else {
-                                self.new_message_text[dlu - 1].push('\n');
+                                //todo sent
                             }
                         }
                         KeyCode::Esc => {
@@ -66,13 +76,31 @@ impl App {
                             let dlu = self.new_message_text.len();
                             let dlu_linii = self.new_message_text[dlu - 1].len();
                             if dlu_linii > 0 {
+                                if (self.length == self.cursor_position) {
+                                    self.cursor_position -= 1;
+                                }
+
+                                self.length -= 1;
+
                                 self.new_message_text[dlu - 1].pop();
                             } else if dlu > 1 {
+                                if (self.length == self.cursor_position) {
+                                    self.cursor_position -= 1;
+                                }
+
+                                self.length -= 1;
+
                                 self.new_message_text.pop();
                             }
                         }
                         KeyCode::Char(c) => {
                             let dlu = self.new_message_text.len();
+                            if (self.length == self.cursor_position) {
+                                self.cursor_position += 1;
+                            }
+
+                            self.length += 1;
+
                             self.new_message_text[dlu - 1].push(c);
                             //println!("{c}");
                         }
@@ -95,6 +123,28 @@ impl Widget for &App {
     where
         Self: Sized,
     {
+        //before i-th letter
+        fn place_in_position(input: Vec<String>, position: u16, znak: char) -> Vec<String> {
+            let mut output: Vec<String> = input.clone();
+            let mut curr_position: u16 = 0;
+            for i in 0..input.len() {
+                let line = &input[i];
+                for j in 0..line.len() {
+                    if curr_position == position {
+                        output[i].insert(j, znak);
+                        return output;
+                    }
+                    curr_position += 1;
+                }
+                if curr_position == position {
+                    output[i].push(znak);
+                    return output;
+                }
+                curr_position += 1;
+            }
+            output
+        }
+
         let dlu = self.new_message_text.len();
 
         let vertical_layout =
@@ -111,13 +161,14 @@ impl Widget for &App {
             .title(" typing ")
             .title_bottom(instructions)
             .border_set(border::ROUNDED);
-        let mut wiadomosc: Vec<String> = self
-            .new_message_text
-            .clone()
+
+        let mut wiadomosc: Vec<String> = self.new_message_text.clone();
+        //wiadomosc[dlu - 1].push('|');
+        wiadomosc = place_in_position(wiadomosc, self.cursor_position, '|');
+        wiadomosc = wiadomosc
             .iter()
             .map(|line| " ".to_string().clone() + line)
             .collect();
-        wiadomosc[dlu - 1].push('|');
 
         let wiadomosc_as_spans: Vec<Line> = wiadomosc
             .iter()
