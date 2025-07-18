@@ -10,10 +10,8 @@ async def handle_connection(websocket):
     timestamp = datetime.now().strftime("%H:%M:%S")
     join_msg = f"[{timestamp}] System: {client_ip} joined the chat"
     
-    # Add to connected set
     connected.add(websocket)
     
-    # Notify all clients
     for conn in connected:
         try:
             await conn.send(join_msg)
@@ -21,14 +19,19 @@ async def handle_connection(websocket):
             print(f"Failed to send to disconnected client: {conn.remote_address}")
 
     try:
-        # Handle messages
         async for message in websocket:
             timestamp = datetime.now().strftime("%H:%M:%S")
-            print(f"[{timestamp}] Received from {client_ip}: {message}")  # Log received messages
+            print(f"[{timestamp}] Received from {client_ip}: {message}")
             
-            formatted_msg = f"[{timestamp}] {client_ip}: {message}"
+            formatted_lines = []
+            for i, line in enumerate(message.split('\n')):
+                if i == 0:
+                    formatted_lines.append(f"[{timestamp}] {client_ip}: {line}")
+                else:
+                    formatted_lines.append(f"{' ' * (len(timestamp) + 3)}  {line}")
             
-            # Broadcast to all clients including sender
+            formatted_msg = "\n".join(formatted_lines)
+            
             for conn in connected:
                 try:
                     await conn.send(formatted_msg)
@@ -38,7 +41,6 @@ async def handle_connection(websocket):
     except websockets.exceptions.ConnectionClosed as e:
         print(f"Connection closed unexpectedly: {e}")
     finally:
-        # Clean up on disconnect
         if websocket in connected:
             connected.discard(websocket)
             timestamp = datetime.now().strftime("%H:%M:%S")
@@ -50,8 +52,8 @@ async def handle_connection(websocket):
                     print(f"Failed to send to disconnected client: {conn.remote_address}")
             print(f"Connection closed: {client_ip}")
 
+
 async def main():
-    # Server configuration with increased timeouts
     server = await websockets.serve(
         handle_connection, 
         "localhost", 
@@ -61,7 +63,7 @@ async def main():
         close_timeout=10
     )
     print("WebSocket server started on ws://localhost:9001")
-    await asyncio.Future()  # Run forever
+    await asyncio.Future() 
 
 if __name__ == "__main__":
     asyncio.run(main())

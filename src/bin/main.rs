@@ -79,6 +79,7 @@ fn main() -> io::Result<()> {
         history_index: 0,
         connection_status,
         scroll_offset: 0,
+        scroll_to_bottom: true,
     };
 
     let app_result = app.run(&mut terminal, ui_rx);
@@ -100,6 +101,7 @@ pub struct App {
     history_index: usize,
     connection_status: Arc<Mutex<String>>,
     scroll_offset: usize,
+    scroll_to_bottom: bool,
 }
 
 impl App {
@@ -114,7 +116,7 @@ impl App {
             while let Ok(msg) = ui_rx.try_recv() {
                 let mut messages = self.messages.lock().unwrap();
                 messages.push(msg);
-                self.scroll_offset = 0;
+                self.scroll_to_bottom = true;
             }
 
             if poll(Duration::from_millis(16))? {
@@ -279,9 +281,11 @@ impl App {
                         }
                         KeyCode::PageUp => {
                             self.scroll_offset = self.scroll_offset.saturating_add(5);
+                            self.scroll_to_bottom = false;
                         }
                         KeyCode::PageDown => {
                             self.scroll_offset = self.scroll_offset.saturating_sub(5);
+                            self.scroll_to_bottom = false;
                         }
                         _ => {}
                     }
@@ -358,7 +362,7 @@ impl App {
         (last_idx, self.new_message_text[last_idx].chars().count())
     }
 
-    fn draw(&self, frame: &mut Frame) {
+    fn draw(&mut self, frame: &mut Frame) {
         let vertical_layout = Layout::vertical([
             Constraint::Length(3),                                        // Title bar
             Constraint::Min(3),                                           // Messages
@@ -385,16 +389,42 @@ impl App {
 
         let messages = self.messages.lock().unwrap();
 
-        let visible_messages: Vec<_> = messages
+        let mut all_lines = Vec::new();
+        for msg in messages.iter() {
+            let lines: Vec<&str> = msg.split('\n').collect();
+            if !lines.is_empty() {
+                all_lines.push(lines[0].to_string());
+                for line in lines.iter().skip(1) {
+                    all_lines.push(format!("...{}", line));
+                }
+            }
+        }
+
+        if self.scroll_to_bottom {
+            self.scroll_offset = all_lines
+                .len()
+                .saturating_sub(messages_area.height as usize);
+            self.scroll_to_bottom = false;
+        }
+
+        let max_scroll = all_lines
+            .len()
+            .saturating_sub(messages_area.height as usize);
+        if self.scroll_offset > max_scroll {
+            self.scroll_offset = max_scroll;
+        }
+
+        let visible_lines: Vec<&str> = all_lines
             .iter()
             .skip(self.scroll_offset)
             .take(messages_area.height as usize)
+            .map(|s| s.as_str())
             .collect();
 
         let messages_text: Text = Text::from(
-            visible_messages
+            visible_lines
                 .iter()
-                .map(|msg| Line::from(Span::raw(*msg)))
+                .map(|line| Line::from(Span::raw(*line)))
                 .collect::<Vec<_>>(),
         );
 
