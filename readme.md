@@ -49,25 +49,22 @@ python main.py
 ### 3. Build and run the Rust client
 
 ```bash
-cargo run --bin main
+cargo run --release
 ```
 
 ## Usage
 
 ### Client Controls
 
-| Key Combination   | Action                     |
-| ----------------- | -------------------------- |
-| Enter             | Send message               |
-| Shift+Enter       | Create new line in message |
-| Up Arrow          | Navigate message history   |
-| Down Arrow        | Navigate message history   |
-| Left/Right Arrows | Move cursor horizontally   |
-| Ctrl+Up/Ctrl+Down | Move cursor between lines  |
-| PageUp/PageDown   | Scroll message history     |
-| Home/End          | Jump to start/end of line  |
-| Backspace/Delete  | Delete characters          |
-| Esc               | Exit application           |
+| Key Combination   | Action                                       |
+| ----------------- | -------------------------------------------- |
+| Enter             | Send message                                 |
+| Tab+Enter         | Create new line in message                   |
+| Up/Down Arrow     | Navigate message vertically / access history |
+| Left/Right Arrows | Move cursor horizontally                     |
+| Home/End          | Jump to start/end of line                    |
+| Backspace/Delete  | Delete characters                            |
+| Esc               | Exit application                             |
 
 ### UI Layout
 

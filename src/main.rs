@@ -40,13 +40,13 @@ fn main() -> io::Result<()> {
 
             loop {
                 if let Ok(msg) = ws_rx.try_recv() {
-                    if let Err(e) = socket.write_message(Message::Text(msg.into())) {
+                    if let Err(e) = socket.send(Message::Text(msg.into())) {
                         *status_clone.lock().unwrap() = format!("Send error: {}", e);
                         break;
                     }
                 }
 
-                match socket.read_message() {
+                match socket.read() {
                     Ok(message) => {
                         if let Message::Text(text) = message {
                             ui_tx_clone.send(text.to_string()).unwrap();
@@ -159,9 +159,11 @@ impl App {
                                     } else {
                                         self.history_index -= 1;
                                     }
-                                    self.new_message_text[0] =
-                                        self.input_history[self.history_index].clone();
-                                    self.cursor_position = self.new_message_text[0].len();
+                                    if self.input_history.len() > self.history_index {
+                                        self.new_message_text[0] =
+                                            self.input_history[self.history_index].clone();
+                                        self.cursor_position = self.new_message_text[0].len();
+                                    }
                                 }
                             } else {
                                 let (current_line, current_col) = self.get_cursor_line_char_index();
@@ -279,14 +281,6 @@ impl App {
                             let (line_idx, _) = self.get_cursor_line_char_index();
                             self.cursor_position = self.get_line_end(line_idx);
                         }
-                        KeyCode::PageUp => {
-                            self.scroll_offset = self.scroll_offset.saturating_add(5);
-                            self.scroll_to_bottom = false;
-                        }
-                        KeyCode::PageDown => {
-                            self.scroll_offset = self.scroll_offset.saturating_sub(5);
-                            self.scroll_to_bottom = false;
-                        }
                         _ => {}
                     }
                 }
@@ -377,7 +371,7 @@ impl App {
             status_area,
             input_title_area,
             input_area,
-        ] = vertical_layout.areas(frame.size());
+        ] = vertical_layout.areas(frame.area());
 
         let title = Block::default()
             .title(" 💬 Rust Chat Client ")
