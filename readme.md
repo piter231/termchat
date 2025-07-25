@@ -2,19 +2,20 @@
 
 ## Overview
 
-This project is a terminal-based chat application built with Rust, featuring a rich Text-based User Interface (TUI) and real-time messaging capabilities through WebSockets. The application allows multiple users to communicate in a shared chat room with features like multi-line messaging, message history navigation, and real-time synchronization.
+This project is a terminal-based chat application built with Rust, featuring a rich Text-based User Interface (TUI) and real-time messaging capabilities through WebSockets. The application allows multiple users to communicate in a shared chat room with features like nickname identification, multi-line messaging, message history navigation, and real-time synchronization.
 
 ## Features
 
 - 🚀 **Real-time messaging** with WebSocket backend
-- ✍️ **Multi-line input** support (Shift+Enter for new lines)
+- 👤 **Nickname identification** (specified at launch)
+- 🌐 **Custom backend support** (connect to any WebSocket server)
+- ✍️ **Multi-line input** support (Tab+Enter for new lines)
 - ⏱️ **Message history** navigation with Up/Down arrows
-- 📜 **Scrollable message history** with PageUp/PageDown
-- 🌐 **User identification** by IP address
+- 📜 **Scrollable message history** with auto-scroll to new messages
 - ⏲️ **Timestamps** on all messages
-- 🔄 **Auto-scroll** to new messages
-- 📶 **Connection status** indicator
+- 🔄 **Auto-reconnect** with connection status indicator
 - 💻 **Intuitive TUI interface** with clear section separation
+- 🔒 **Nickname change notifications** when users update their identity
 
 ## Prerequisites
 
@@ -43,16 +44,27 @@ source .venv/bin/activate  # Linux/Mac
 pip install websockets
 
 # Start the server
-python main.py
+python server.py
 ```
 
 ### 3. Build and run the Rust client
 
 ```bash
-cargo run --release
+# Run with nickname and default backend
+cargo run -- --nick "YourNickname"
+
+# Run with nickname and custom backend
+cargo run -- --nick "YourNickname" --backend 192.168.1.100:9001
 ```
 
 ## Usage
+
+### Client Options
+
+| Option      | Description                         | Example                       |
+| ----------- | ----------------------------------- | ----------------------------- |
+| `--nick`    | Specify your nickname (required)    | `--nick "Alice"`              |
+| `--backend` | Custom WebSocket address (optional) | `--backend myserver.com:8080` |
 
 ### Client Controls
 
@@ -71,7 +83,7 @@ cargo run --release
 The interface is divided into five sections:
 
 1. **Title Bar**: Application name and branding
-2. **Message Display Area**: Chat history with timestamps
+2. **Message Display Area**: Chat history with nicknames and timestamps
 3. **Status Bar**: Connection status information
 4. **Input Title**: Instructions for message input
 5. **Input Area**: Where you type messages with cursor indicator (│)
@@ -83,9 +95,11 @@ The interface is divided into five sections:
 The Python WebSocket server:
 
 - Manages client connections and disconnections
+- Handles nickname registration and changes
 - Broadcasts messages to all connected clients
 - Adds timestamps to messages
 - Handles user join/leave notifications
+- Formats messages with nicknames
 - Implements timeout handling for stable connections
 
 ### Frontend Architecture
@@ -99,12 +113,15 @@ The Rust TUI client:
   - Dedicated thread for receiving messages
 - Maintains message history with efficient scrolling
 - Features input history navigation
+- Supports custom backend addresses
+- Formats messages as JSON with nickname metadata
 
 ## Known Issues
 
 - Terminal resizing during operation may cause UI glitches
 - Complex Unicode characters may affect cursor positioning
 - High message volume may impact performance
+- Nicknames with special characters might cause formatting issues
 
 ## Future Improvements
 
@@ -114,6 +131,9 @@ The Rust TUI client:
 - [ ] User authentication
 - [ ] File sharing capabilities
 - [ ] Emoji support
+- [ ] Typing indicators
+- [ ] Message formatting (bold, italics)
+- [ ] Connection recovery on network failure
 
 ## Troubleshooting
 
@@ -122,16 +142,23 @@ The Rust TUI client:
 1. **Connection failures**:
 
    - Ensure the Python server is running before starting clients
-   - Verify firewall settings allow connections on port 9001
+   - Verify firewall settings allow connections on the specified port
+   - Check the backend address format: `IP:PORT` or `hostname:PORT`
 
-2. **UI rendering issues**:
+2. **Nickname conflicts**:
+
+   - Server uses first-come-first-served for nicknames
+   - Try a different nickname if you can't send messages
+
+3. **UI rendering issues**:
 
    - Try resizing your terminal window
    - Ensure your terminal supports UTF-8 characters
 
-3. **WebSocket errors**:
+4. **WebSocket errors**:
    - Check Python version (requires 3.7+)
    - Verify websockets library is installed correctly
+   - Ensure no other service is using port 9001
 
 ## License
 

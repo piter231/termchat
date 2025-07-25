@@ -5,6 +5,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+use clap::Parser;
 use ratatui::{
     Frame, Terminal,
     backend::CrosstermBackend,
@@ -18,9 +19,25 @@ use ratatui::{
     text::{Line, Span, Text},
     widgets::{Block, Borders, Paragraph, Wrap},
 };
+use serde_json;
 use tungstenite::{Message, connect};
 
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Nickname for the chat
+    #[arg(short, long)]
+    nick: String,
+
+    /// Backend server address (e.g., localhost:9001)
+    #[arg(short, long, default_value = "localhost:9001")]
+    backend: String,
+}
+
 fn main() -> io::Result<()> {
+    let args = Args::parse();
+    let ws_url = format!("ws://{}", args.backend);
+
     let mut stdout = io::stdout();
     enable_raw_mode()?;
     execute!(stdout, EnterAlternateScreen)?;
@@ -30,13 +47,14 @@ fn main() -> io::Result<()> {
     let (ws_tx, ws_rx) = mpsc::channel::<String>();
     let (ui_tx, ui_rx) = mpsc::channel::<String>();
     let messages = Arc::new(Mutex::new(Vec::<String>::new()));
-    let connection_status = Arc::new(Mutex::new("Connecting...".to_string()));
+    let connection_status = Arc::new(Mutex::new(format!("Connecting to {}...", ws_url)));
 
     let status_clone = Arc::clone(&connection_status);
     let ui_tx_clone = ui_tx.clone();
-    thread::spawn(move || match connect("ws://localhost:9001") {
+    let url_clone = ws_url.clone();
+    thread::spawn(move || match connect(&url_clone) {
         Ok((mut socket, _)) => {
-            *status_clone.lock().unwrap() = "Connected to ws://localhost:9001".to_string();
+            *status_clone.lock().unwrap() = format!("Connected to {}", url_clone);
 
             loop {
                 if let Ok(msg) = ws_rx.try_recv() {
@@ -80,6 +98,7 @@ fn main() -> io::Result<()> {
         connection_status,
         scroll_offset: 0,
         scroll_to_bottom: true,
+        nick: args.nick,
     };
 
     let app_result = app.run(&mut terminal, ui_rx);
@@ -102,6 +121,7 @@ pub struct App {
     connection_status: Arc<Mutex<String>>,
     scroll_offset: usize,
     scroll_to_bottom: bool,
+    nick: String,
 }
 
 impl App {
@@ -301,7 +321,13 @@ impl App {
             self.input_history.push(message.clone());
             self.history_index = self.input_history.len();
 
-            if let Err(e) = self.ws_tx.send(message) {
+            let json_message = serde_json::json!({
+                "nick": self.nick,
+                "message": message,
+            });
+            let json_string = json_message.to_string();
+
+            if let Err(e) = self.ws_tx.send(json_string) {
                 *self.connection_status.lock().unwrap() = format!("Send error: {}", e);
             }
         }
