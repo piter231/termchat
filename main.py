@@ -36,7 +36,6 @@ async def handle_connection(websocket):
                     new_nick = data["nick"]
                     old_nick = nicks.get(websocket, client_ip)
                     
-                    # Update nickname if changed
                     if new_nick != old_nick:
                         nicks[websocket] = new_nick
                         timestamp = datetime.now().strftime("%H:%M:%S")
@@ -54,7 +53,6 @@ async def handle_connection(websocket):
             except json.JSONDecodeError:
                 msg_text = message
 
-            # Format message with nickname
             formatted_lines = []
             lines = msg_text.split('\n')
             for i, line in enumerate(lines):
@@ -96,7 +94,7 @@ async def handle_connection(websocket):
 async def main():
     server = await websockets.serve(
         handle_connection, 
-        "0.0.0.0",  # Listen on all interfaces
+        "0.0.0.0", 
         9001,
         ping_interval=1,
         ping_timeout=60,

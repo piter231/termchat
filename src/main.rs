@@ -25,11 +25,9 @@ use tungstenite::{Message, connect};
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// Nickname for the chat
     #[arg(short, long)]
     nick: String,
 
-    /// Backend server address (e.g., localhost:9001)
     #[arg(short, long, default_value = "localhost:9001")]
     backend: String,
 }
@@ -413,9 +411,8 @@ impl App {
         for msg in messages.iter() {
             let lines: Vec<&str> = msg.split('\n').collect();
             if !lines.is_empty() {
-                all_lines.push(lines[0].to_string());
-                for line in lines.iter().skip(1) {
-                    all_lines.push(format!("...{}", line));
+                for line in lines.iter() {
+                    all_lines.push(line.to_string());
                 }
             }
         }
@@ -448,9 +445,8 @@ impl App {
                 .collect::<Vec<_>>(),
         );
 
-        let msg_widget = Paragraph::new(messages_text)
-            .block(Block::default().borders(Borders::NONE))
-            .wrap(Wrap { trim: true });
+        let msg_widget =
+            Paragraph::new(messages_text).block(Block::default().borders(Borders::NONE));
 
         frame.render_widget(msg_widget, messages_area);
 
